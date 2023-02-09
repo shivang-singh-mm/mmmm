@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  user_id             String            @id @unique @default(uuid())
+  phone_number        String            @unique
+  calling_number      String[]
+  name                String
+  dob                 String?
+  tob                 String?
+  city_of_birth       String?
+  hand_image          String[]
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+  customer_mapping    customer_mapping?
+  user_transaction_1  transaction[]     @relation("user_transaction")
+  user_booking_data_1 booking_data[]    @relation("user_booking")
+  record_status       record_status[]   @relation("record-status")
+}
+
+model agent {
+  agent_id                 String             @id @unique @default(uuid())
+  phone_number             String
+  company_number           String?
+  name                     String
+  role                     AGENT_ROLE
+  created_at               DateTime           @default(now())
+  updated_at               DateTime           @updatedAt
+  agent_customer_mapping_1 customer_mapping[] @relation("customer_astro")
+  agent_customer_mapping_2 customer_mapping[] @relation("customer_rm")
+  customer_mapping_3       session_data[]     @relation("session_agent")
+  agent_booking_data_1     booking_data[]     @relation("agent_booking")
+  record_status            record_status[]    @relation("record-status")
+}
+
+enum AGENT_ROLE {
+  ASTRO
+  RM
+  ADMIN
+}
+
+model customer_mapping {
+  astro_id   String
+  rm_id      String
+  user_id    String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  user       user     @relation(fields: [user_id], references: [user_id])
+  astro      agent    @relation(fields: [astro_id], references: [agent_id], name: "customer_astro")
+  rm         agent    @relation(fields: [rm_id], references: [agent_id], name: "customer_rm")
+}
+
+model session_data {
+  agent_id           String
+  payment_time       DateTime
+  session_id         String   @unique @default(uuid())
+  agent              agent    @relation(fields: [agent_id], references: [agent_id], name: "session_agent")
+  session_start_time DateTime
+  duration           DateTime
+  recording_url      String?
+  status             String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+}
+
+enum PAYMENT_STATUS {
+  PAID
+  PENDING
+  CANCELLED
+}
+
+model transaction {
+  payment_id                      String         @unique @default(uuid())
+  user_id                         String
+  user                            user           @relation(fields: [user_id], references: [user_id], name: "user_transaction")
+  payment_amount                  BigInt
+  payment_status                  PAYMENT_STATUS
+  payment_link                    String
+  link_gen_timestamp              DateTime
+  created_at                      DateTime       @default(now())
+  updated_at                      DateTime       @updatedAt
+  poyment_status_update_timestamp DateTime
+  transaction_booking_1           booking_data[] @relation("transaction_booking")
+}
+
+model booking_data {
+  booking_id String      @unique @default(uuid())
+  user_id    String
+  user       user        @relation(fields: [user_id], references: [user_id], name: "user_booking")
+  agent_id   String
+  agent      agent       @relation(fields: [agent_id], references: [agent_id], name: "agent_booking")
+  payment_id String
+  payment    transaction @relation(fields: [payment_id], references: [payment_id], name: "transaction_booking")
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+}
+
+model record_status {
+  status_id  String   @unique @default(uuid())
+  user       user     @relation(fields: [user_id], references: [user_id], name: "record-status")
+  agent      agent    @relation(fields: [agent_id], references: [agent_id], name: "record-status")
+  user_id    String
+  agent_id   String
+  status     String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
